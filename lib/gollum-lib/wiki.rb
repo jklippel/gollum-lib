@@ -489,13 +489,14 @@ module Gollum
     # query - The string to search for
     #
     # Returns an Array with Objects of page name and count of matches
-    def search(query)
-      options = {:path => page_file_dir, :ref => ref}
-      search_terms = query.scan(/"([^"]+)"|(\S+)/).flatten.compact.map {|term| Regexp.escape(term)}
-      search_terms_regex = search_terms.join('|')
+    def search(query_param, regex_separator = '|')
+      query = query_param
+      options = { :path => page_file_dir, :ref => ref }
+      search_terms = query.scan(/"([^"]+)"|(\S+)/).flatten.compact.map { |term| Regexp.escape(term) }
+      search_terms_regex = search_terms.join(regex_separator)
       query = /^(.*(?:#{search_terms_regex}).*)$/i
       results = @repo.git.grep(search_terms, options) do |name, data|
-        result = {:count => 0}
+        result = { :count => 0 }
         result[:name] = extract_page_file_dir(name)
         result[:filename_count] = result[:name].scan(/#{search_terms_regex}/i).size
         result[:context] = []
@@ -511,7 +512,11 @@ module Gollum
         end
         ((result[:count] + result[:filename_count]) == 0) ? nil : result
       end
-      [results, search_terms]
+      if regex_separator == ' ' && results == []
+        search(query_param, '|')
+      else
+        [results, search_terms]
+      end
     end
 
     # Public: All of the versions that have touched the Page.

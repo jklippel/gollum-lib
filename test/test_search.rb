@@ -128,6 +128,18 @@ EOF
     assert_equal [], img_result[:context]
   end
 
+  test 'search should support multiple search terms with space still results in piped result' do
+    results = @wiki.search('foo bar', ' ').first
+    assert_equal 2, results.size
+    assert_equal 'bar.md', results.first[:name]
+    assert_equal 'foo.md', results.last[:name]
+
+    results = @wiki.search('Hobbits pastry', ' ').first
+    assert_equal 1, results.size
+    assert_equal 4, results.first[:count]
+    assert_equal SEARCH_TEST_LINES[2], results.first[:context].last
+  end
+
   teardown do
     FileUtils.rm_rf(@path)
   end
